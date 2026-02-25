@@ -30,7 +30,7 @@ def douban():
 
     starts = list(range(0, 320, 20))
 
-    with ThreadPoolExecutor(max_workers=16) as executor:
+    with ThreadPoolExecutor(max_workers=8) as executor:
         futures = [
             executor.submit(fetch_page, start, headers, url)
             for start in starts
