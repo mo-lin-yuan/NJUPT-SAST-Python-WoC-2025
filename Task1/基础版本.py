@@ -25,9 +25,9 @@ def douban():
         }
 
         res = requests.get(url, headers=headers, params=params)
-        print(res.text)
+        # print(res.text)
         data = res.json()
-        print(data)
+        # print(data)
 
         for movie in data:
             all_movies.append({
