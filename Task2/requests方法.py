@@ -20,7 +20,23 @@ def xioami():
 
     # print(response.json())
 
-    df=pd.DataFrame(response.json())
+    data = response.json()
+
+    data_list = data["data"]
+    goods = []
+
+    for item in data_list:
+        info = item["info"]
+        goods.append({
+            "商品名称": info["name"],
+            "价格": info["price"],
+            "评论数": info["comments"],
+            "图片": info["image"]
+        })
+
+    df = pd.DataFrame(goods)
     df.to_csv("requests方法.csv", index=False, encoding="utf-8-sig")
+
+    print("爬取完成，共", len(goods), "条")
 
 xioami()

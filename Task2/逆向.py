@@ -32,7 +32,7 @@ def xiaomi():
         })
 
     df = pd.DataFrame(goods)
-    df.to_csv("小米商城.csv", index=False, encoding="utf-8-sig")
+    df.to_csv("逆向.csv", index=False, encoding="utf-8-sig")
 
     print("爬取完成，共", len(goods), "条")
 xiaomi()
