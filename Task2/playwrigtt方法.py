@@ -33,5 +33,6 @@ def xiaomi_playwright():
         df.to_csv("playwright方法.csv", index=False, encoding="utf-8-sig")
 
         browser.close()
+    print("爬取完成，共", len(goods), "条")
 
 xiaomi_playwright()
