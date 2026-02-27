@@ -1,9 +1,11 @@
 import requests
 import pandas as pd
 import time
+import random
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-def fetch_page(start, headers, url):
+def fetch(start, headers, url):
+
     params = {
         "type": "10",
         "interval_id": "100:90",
@@ -12,8 +14,29 @@ def fetch_page(start, headers, url):
         "limit": "20"
     }
 
-    res = requests.get(url, headers=headers, params=params)
-    return res.json()
+    try:
+        time.sleep(random.uniform(0.5, 1.5))
+
+        res = requests.get(url, headers=headers, params=params, timeout=10)
+
+        if res.status_code != 200:
+            print(f"请求失败，状态码：{res.status_code}")
+            return []
+
+        if "application/json" not in res.headers.get("Content-Type", ""):
+            print(f"返回内容不是JSON")
+            return []
+
+        data = res.json()
+
+        if not data:
+            return None
+        
+        return data
+
+    except Exception as e:
+        print(f"抓取异常：{e}")
+        return []
 
 def douban():
     total_start = time.perf_counter()
@@ -23,21 +46,20 @@ def douban():
     }
 
     url = "https://movie.douban.com/j/chart/top_list"
-
     all_movies = []
-
     spider_start = time.perf_counter()
 
-    starts = list(range(0, 320, 20))
+    starts = list(range(0, 10000, 20))
 
     with ThreadPoolExecutor(max_workers=8) as executor:
-        futures = [
-            executor.submit(fetch_page, start, headers, url)
-            for start in starts
-        ]
+        futures = {executor.submit(fetch, start, headers, url): start for start in starts}
 
         for future in as_completed(futures):
             data = future.result()
+
+            if data is None:
+                print("抓到空数据，停止抓取")
+                break
 
             for movie in data:
                 all_movies.append({
@@ -47,9 +69,9 @@ def douban():
                     "评分(score)": movie.get("score"),
                     "评分人数(vote_count)": movie.get("vote_count"),
                     "上映日期(release_date)": movie.get("release_date"),
-                    "类型(types)": ",".join(movie.get("types", [])), # 列表转字符串
-                    "地区(regions)": ",".join(movie.get("regions", [])), # 列表转字符串
-                    "主演(actors)": ",".join(movie.get("actors", [])), # 列表转字符串
+                    "类型(types)": ",".join(movie.get("types", [])),
+                    "地区(regions)": ",".join(movie.get("regions", [])),
+                    "主演(actors)": ",".join(movie.get("actors", [])),
                     "主演人数(actor_count)": movie.get("actor_count"),
                     "是否可播放(is_playable)": movie.get("is_playable"),
                     "是否已观看(is_watched)": movie.get("is_watched"),
@@ -57,11 +79,14 @@ def douban():
                     "详情页链接(url)": movie.get("url")
                 })
 
+            print(f"目前共{len(all_movies)}部电影数据")
+
+    all_movies.sort(key=lambda x: x["排名(rank)"])
+
     spider_end = time.perf_counter()
     save_start = time.perf_counter()
 
     df = pd.DataFrame(all_movies)
-
     df.to_csv("豆瓣电影悬疑片排行(加速版结果).csv", index=False, encoding="utf-8-sig")
 
     save_end = time.perf_counter()
