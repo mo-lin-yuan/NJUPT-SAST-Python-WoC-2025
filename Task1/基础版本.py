@@ -78,4 +78,6 @@ def douban():
     print(f"保存耗时：{save_end - save_start:.2f} 秒")
     print(f"总耗时：{total_end - total_start:.2f} 秒")
 
-douban()
+for i in range(5):
+    print(f'第{i}次数据')
+    douban()
