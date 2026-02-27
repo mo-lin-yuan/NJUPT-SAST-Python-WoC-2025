@@ -1,9 +1,9 @@
 import httpx
 import time
+import random
 import pandas as pd
 
 def xiaomi():
-    url = "https://www.mi.com/"
     url = "https://api2.order.mi.com/rec/search"
 
     params = {
@@ -17,25 +17,40 @@ def xiaomi():
         "Referer": "https://www.mi.com/"
     }
 
-    with httpx.Client() as client:
-        response = client.get(url, params=params, headers=headers)
+    try:
+        time.sleep(random.uniform(0.5, 1.5))
+
+        with httpx.Client(timeout=10.0) as client:
+            response = client.get(url, params=params, headers=headers)
+
+        if response.status_code != 200:
+            print("请求失败")
+            return
+
         data = response.json()
+        data_list = data.get("data", [])
 
-    data_list = data["data"]
-    goods = []
+        if not data_list:
+            print("数据为空")
+            return
 
-    for item in data_list:
-        info = item["info"]
-        goods.append({
-            "商品名称": info["name"],
-            "价格": info["price"],
-            "评论数": info["comments"],
-            "图片": info["image"]
-        })
+        goods = []
 
-    df = pd.DataFrame(goods)
-    df.to_csv("httpx法.csv", index=False, encoding="utf-8-sig")
+        for item in data_list:
+            info = item.get("info", {})
+            goods.append({
+                "商品名称": info.get("name"),
+                "价格": info.get("price"),
+                "评论数": info.get("comments"),
+                "图片": info.get("image")
+            })
 
-    print("爬取完成，共", len(goods), "条")
+        df = pd.DataFrame(goods).drop_duplicates()
+        df.to_csv("httpx法.csv", index=False, encoding="utf-8-sig")
+
+        print("爬取完成，共", len(df), "条")
+
+    except Exception as e:
+        print("请求异常:", e)
 
 xiaomi()

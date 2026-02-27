@@ -3,6 +3,7 @@ import urllib.parse
 import json
 import time
 import pandas as pd
+import random
 
 def xiaomi():
     base_url = "https://api2.order.mi.com/rec/search"
@@ -14,7 +15,6 @@ def xiaomi():
     }
 
     query_string = urllib.parse.urlencode(params)
-
     full_url = base_url + "?" + query_string
 
     headers = {
@@ -22,28 +22,41 @@ def xiaomi():
         "Referer": "https://www.mi.com/"
     }
 
-    req = urllib.request.Request(full_url, headers=headers)
+    try:
+        time.sleep(random.uniform(0.5, 1.5))
 
-    with urllib.request.urlopen(req) as response:
-        result = response.read().decode("utf-8")
-        data = json.loads(result)
+        req = urllib.request.Request(full_url, headers=headers)
 
-    # print(data)
-    data_list = data["data"]
-    goods = []
+        with urllib.request.urlopen(req, timeout=10) as response:
+            if response.status != 200:
+                print("请求失败")
+                return
 
-    for item in data_list:
-        info = item["info"]
-        goods.append({
-            "商品名称": info["name"],
-            "价格": info["price"],
-            "评论数": info["comments"],
-            "图片": info["image"]
-        })
+            result = response.read().decode("utf-8")
+            data = json.loads(result)
 
-    df=pd.DataFrame(goods)
-    df.to_csv("urllib方法.csv", index=False, encoding="utf-8-sig")
+        data_list = data.get("data", [])
+        if not data_list:
+            print("数据为空")
+            return
 
-    print("爬取完成，共", len(goods), "条")
+        goods = []
+
+        for item in data_list:
+            info = item.get("info", {})
+            goods.append({
+                "商品名称": info.get("name"),
+                "价格": info.get("price"),
+                "评论数": info.get("comments"),
+                "图片": info.get("image")
+            })
+
+        df = pd.DataFrame(goods).drop_duplicates()
+        df.to_csv("urllib方法.csv", index=False, encoding="utf-8-sig")
+
+        print("爬取完成，共", len(df), "条")
+
+    except Exception as e:
+        print("请求异常:", e)
 
 xiaomi()

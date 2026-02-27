@@ -1,6 +1,7 @@
 import requests
-import time
 import pandas as pd
+import time
+import random
 
 def xiaomi():
     url = "https://api2.order.mi.com/rec/search"
@@ -16,23 +17,36 @@ def xiaomi():
         "Referer": "https://www.mi.com/"
     }
 
-    res = requests.get(url, params=params, headers=headers)
+    try:
+        time.sleep(random.uniform(0.5, 1.5))
+        res = requests.get(url, params=params, headers=headers, timeout=10)
 
-    data = res.json()["data"]
+        if res.status_code != 200:
+            print("请求失败")
+            return
 
-    goods = []
+        data = res.json().get("data", [])
+        if not data:
+            print("数据为空")
+            return
 
-    for item in data:
-        info = item["info"]
-        goods.append({
-            "商品名称": info["name"],
-            "价格": info["price"],
-            "评论数": info["comments"],
-            "图片": info["image"]
-        })
+        goods = []
 
-    df = pd.DataFrame(goods)
-    df.to_csv("逆向.csv", index=False, encoding="utf-8-sig")
+        for item in data:
+            info = item.get("info", {})
+            goods.append({
+                "商品名称": info.get("name"),
+                "价格": info.get("price"),
+                "评论数": info.get("comments"),
+                "图片": info.get("image")
+            })
 
-    print("爬取完成，共", len(goods), "条")
+        df = pd.DataFrame(goods)
+        df.to_csv("逆向.csv", index=False, encoding="utf-8-sig")
+
+        print("爬取完成，共", len(goods), "条")
+
+    except Exception as e:
+        print("请求异常:", e)
+
 xiaomi()
