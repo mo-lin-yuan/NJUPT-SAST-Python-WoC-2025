@@ -15,19 +15,31 @@ def douban():
 
     spider_start = time.perf_counter()
 
-    for start in range(0, 320, 20):
-        params = {
-            "type": "10",
-            "interval_id": "100:90",
-            "action": "",
-            "start": start,
-            "limit": "20"
-        }
+    base_params = {
+        "type": "10",
+        "interval_id": "100:90",
+        "action": "",
+        "limit": "20"
+    }
 
-        res = requests.get(url, headers=headers, params=params)
-        # print(res.text)
+    for start in range(0, 10000, 20):
+        base_params["start"] = start
+
+        res = requests.get(url, headers=headers, params=base_params,timeout=10)
+
+        if res.status_code != 200:
+            print("请求失败，停止爬取")
+            break
+
+        if "application/json" not in res.headers.get("Content-Type", ""):
+            print("返回内容不是JSON")
+            break
+
         data = res.json()
-        # print(data)
+
+        if not data:
+            print("数据为空，停止爬取")
+            break
 
         for movie in data:
             all_movies.append({
@@ -37,15 +49,19 @@ def douban():
                 "评分(score)": movie.get("score"),
                 "评分人数(vote_count)": movie.get("vote_count"),
                 "上映日期(release_date)": movie.get("release_date"),
-                "类型(types)": ",".join(movie.get("types", [])), # 列表转字符串
-                "地区(regions)": ",".join(movie.get("regions", [])), # 列表转字符串
-                "主演(actors)": ",".join(movie.get("actors", [])), # 列表转字符串
+                "类型(types)": ",".join(movie.get("types", [])),
+                "地区(regions)": ",".join(movie.get("regions", [])),
+                "主演(actors)": ",".join(movie.get("actors", [])),
                 "主演人数(actor_count)": movie.get("actor_count"),
                 "是否可播放(is_playable)": movie.get("is_playable"),
                 "是否已观看(is_watched)": movie.get("is_watched"),
                 "封面接(cover_url)": movie.get("cover_url"),
                 "详情页链接(url)": movie.get("url")
             })
+
+        print(f"第{start//20 + 1}次完成，目前共{len(all_movies)}部电影")
+
+        time.sleep(1)
 
     spider_end = time.perf_counter()
     save_start = time.perf_counter()
@@ -57,7 +73,7 @@ def douban():
     save_end = time.perf_counter()
     total_end = time.perf_counter()
 
-    print(f"\n共爬取 {len(all_movies)} 部电影")
+    print(f"\n共爬取{len(all_movies)}部电影")
     print(f"爬取耗时：{spider_end - spider_start:.2f} 秒")
     print(f"保存耗时：{save_end - save_start:.2f} 秒")
     print(f"总耗时：{total_end - total_start:.2f} 秒")
