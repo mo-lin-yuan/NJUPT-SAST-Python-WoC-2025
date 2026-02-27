@@ -31,7 +31,7 @@ def fetch(start, headers, url):
 
         if not data:
             return None
-        
+
         return data
 
     except Exception as e:
@@ -59,6 +59,9 @@ def douban():
 
             if data is None:
                 print("抓到空数据，停止抓取")
+                for f in futures:
+                    if not f.done():
+                        f.cancel()
                 break
 
             for movie in data:
